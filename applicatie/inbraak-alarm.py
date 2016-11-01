@@ -4,6 +4,12 @@ import pygame
 # import RPi.GPIO as GPIO -> MOET AANWORDEN GEZET
 from threading import Timer
 
+# Setup twilio voor SMS service
+from twilio.rest import TwilioRestClient
+account_sid = 'AC71a18fed2f8b0a539569ea8e1f271359'
+auth_token = '789143f9e3f7dd896db124a30ab0eeaa'
+client = TwilioRestClient(account_sid, auth_token)
+
 # Initaliseer applicatie via PyGame
 pygame.init()
 screen = pygame.display.set_mode((1,1))
@@ -70,7 +76,7 @@ class InbraakAlarm():
     # Check of de status is veranderd
     def start_anti_inbraak(self):
         print('GET OUT, INITIATE \033[91mLOCKDOWN!\033[30m CALL 911!')
-        # print('INBREKER, INITIEER LOCKDOWN NU!')
+        client.calls.create(to='+31652144206', from_='+14157422845', url='http://demo.twilio.com/welcome/voice/')
 
     global_deurstatus = property(get_deurstatus, set_deurstatus)
 
@@ -92,10 +98,6 @@ if __name__ == '__main__':
                 # Verander de status van de deur door D in te drukken
                 if event.key == pygame.K_KP_PLUS:
                     app.global_deurstatus = (not app.global_deurstatus)
-
-                # Huidige status van het inbraaksysteem
-                if event.key == pygame.K_KP_MINUS:
-                    print(app._status)
 
                 # Werkt alleen wanneer je de settingsknop indrukt als de status unarmed is
                 if event.key == pygame.K_KP_PERIOD and app.global_status == 'unarmed':
@@ -154,6 +156,9 @@ if __name__ == '__main__':
                         # Als de code gelijk is aan 4 cijfers, dan check je of de code juist is ingevoerd
                         if len(app._userbeveiligingscode) == 4:
                             if app._beveiligingscode == app._userbeveiligingscode or app._previousstatus == 'settings-new':
+                                print('Code is: \033[32mjuist\033[30m.')
+                                print('-> WIJZIG LEDS HIER <-')
+                                pygame.time.wait(1000) # wacht even, zodat de indicatie led kan worden getoond.
                                 if app._previousstatus == 'unarmed':
                                     if app._deurdicht == True:
                                         app.global_status = 'armed'
@@ -175,7 +180,9 @@ if __name__ == '__main__':
                                 # reset altijd de userbeveiligingscode
                                 app._userbeveiligingscode = ''
                             else:
-                                print('De code is onjuist ingevoerd, de status wordt ingesteld naar {}'.format(app._previousstatus))
+                                print('Code is: \033[31monjuist\033[30m.')
+                                print('-> WIJZIG LEDS HIER <-')
+                                pygame.time.wait(1000) # wacht even, zodat de indicatie led kan worden getoond.
                                 if app._previousstatus == 'settings-check':
                                     app.global_status = 'settings'
                                 else:
