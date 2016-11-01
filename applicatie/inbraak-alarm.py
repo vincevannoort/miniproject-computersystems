@@ -48,6 +48,8 @@ if __name__ == '__main__':
     # Laat de applicatie runnen
     while True:
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit();
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     app.global_status = 'armed'
