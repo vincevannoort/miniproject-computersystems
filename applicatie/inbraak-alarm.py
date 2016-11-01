@@ -1,26 +1,15 @@
-import pyrebase
+import sqlite3
 import datetime
 import pygame
 
-# Configuratie voor de firebase database
-config = {
-  'apiKey': 'AIzaSyDse4S8imxqiaDRELr58a8P45r7G5Af2go',
-  'authDomain': 'miniproject-computersystems.firebaseapp.com',
-  'databaseURL': 'https://miniproject-computersystems.firebaseio.com',
-  'storageBucket': 'miniproject-computersystems.appspot.com',
-  'serviceAccount': 'database/miniproject-computersystems-c79e0f2b03d3.json'
-}
-
-# Initaliseer applicatie via pyrebase & PyGame
-firebase = pyrebase.initialize_app(config)
+# Initaliseer applicatie via PyGame
 pygame.init()
 screen = pygame.display.set_mode((1,1))
 
-# Authenticeer applicatie
-auth = firebase.auth()
-
 # Firebase database connectie
-db = firebase.database()
+conn = sqlite3.connect('logs.db')
+c = conn.cursor()
+c.execute('CREATE TABLE IF NOT EXISTS logs(id INTEGER PRIMARY KEY AUTOINCREMENT, status TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
 
 # Class inbraakalarm
 class InbraakAlarm():
@@ -43,7 +32,7 @@ class InbraakAlarm():
         self._previousstatus = self._status
         self._status = status
         print('STATUS: {}'.format(self._status))
-        db.child('logs').push({'status': self.get_status(), 'timestamp': str(datetime.datetime.now())})
+        c.execute("INSERT INTO logs (status) VALUES ('{}')".format(self.get_status()))
 
     global_status = property(get_status, set_status)
 
@@ -57,7 +46,10 @@ class InbraakAlarm():
         print('Deur dicht is: {}'.format(app._deurdicht))
         if self._status == 'armed' and self._deurdicht == False:
             print('AHHHHH ER WORDT INGEBROKEN :OOOOOO')
-            app.global_status = 'burglary'
+            app.global_status = 'lockdown'
+
+    def start_anti_inbraak():
+        pass
 
     global_deurstatus = property(get_deurstatus, set_deurstatus)
 
@@ -70,6 +62,9 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit();
+                conn.commit()
+                conn.close()
+
             if event.type == pygame.KEYDOWN:
 
                 # Werkt alleen als status unarmed is of idle
@@ -122,7 +117,7 @@ if __name__ == '__main__':
                                 app._userbeveiliginscode = ''
 
                 # Als het alarm is geactiveerd voor inbraak
-                if app.global_status == 'burglary':
+                if app.global_status == 'lockdown':
                     # Indien de key 0 wordt ingedrukt, kun je een 4 cijferige code invoeren
                     if event.key == pygame.K_KP0:
                         app.global_status = 'inputcode'
