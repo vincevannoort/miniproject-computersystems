@@ -1,2 +1,4 @@
 /.idea/*
 /.idea/s
+*.xml
+applicatie/.idea/applicatie.iml

@@ -14,6 +14,7 @@ config = {
 # Initaliseer applicatie via pyrebase & PyGame
 firebase = pyrebase.initialize_app(config)
 pygame.init()
+screen = pygame.display.set_mode((1,1))
 
 # Authenticeer applicatie
 auth = firebase.auth()
@@ -51,7 +52,13 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 pygame.quit();
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    app.global_status = 'armed'
-                if event.key == pygame.K_RIGHT:
-                    app.global_status = 'unarmed'
+
+                # Werkt alleen als status unarmed is of idle
+                if app.global_status == 'unarmed' or app.global_status == 'idle':
+                    if event.key == pygame.K_LEFT:
+                        app.global_status = 'armed'
+
+                # Werkt alleen als status armed is
+                if app.global_status == 'armed':
+                    if event.key == pygame.K_RIGHT:
+                        app.global_status = 'unarmed'
