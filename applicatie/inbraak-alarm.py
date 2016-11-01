@@ -25,8 +25,8 @@ class InbraakAlarm():
     # Initalisatie inbraakalarm
     # Statussen -> idle, armed, unarmed, settings
     def __init__(self):
-        self._status = 'unarmed'
-        self._previousstatus = 'unarmed'
+        self._status = ''
+        self._previousstatus = ''
         self._beveiligingscode = '1111'
         self._userbeveiligingscode = ''
         self._deurdicht = True
@@ -83,6 +83,7 @@ class InbraakAlarm():
 # Begin de applicatie
 if __name__ == '__main__':
     app = InbraakAlarm()
+    app.global_status = 'unarmed'
 
     # Laat de applicatie runnen
     while True:
