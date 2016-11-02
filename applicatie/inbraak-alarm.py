@@ -64,7 +64,7 @@ class InbraakAlarm():
         elif status == 'lockdown':
             LED_Alarm.on()
         elif status == 'settings':
-            LED_Waarschuwing.blink(1, 1, 1)
+            LED_Waarschuwing.on()
 
     global_status = property(get_status, set_status)
 
