@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
 import pygame
-# import RPi.GPIO as GPIO -> MOET AANWORDEN GEZET
+from gpiozero import LED, Button
 from threading import Timer
 
 # Setup twilio voor SMS service
@@ -9,6 +9,12 @@ from twilio.rest import TwilioRestClient
 account_sid = 'AC71a18fed2f8b0a539569ea8e1f271359'
 auth_token = '789143f9e3f7dd896db124a30ab0eeaa'
 client = TwilioRestClient(account_sid, auth_token)
+
+# LEDS & Button
+LED_Alarm = LED(2)
+LED_Waarschuwing = LED(3)
+LED_Actief = LED(4)
+Button_Deur = Button(17)
 
 # Initaliseer applicatie via PyGame
 pygame.init()
@@ -41,20 +47,23 @@ class InbraakAlarm():
     def set_status(self, status):
         self._previousstatus = self._status
         self._status = status
-        print('Status gewijzigd: {}'.format(self._status))
+        print('Status gewijzigd: {}'.format(self._status))  
         c.execute("INSERT INTO logs (status) VALUES ('{}')".format(self.get_status()))
+        LED_Alarm.off()
+        LED_Waarschuwing.off()
+        LED_Actief.off()
 
         # Wijzig led status wanneer status wordt veranderd
         if status == 'unarmed':
-            print('-> WIJZIG LEDS HIER <-')
+            LED_Actief.blink(0.5,0.5)
         elif status == 'armed':
-            print('-> WIJZIG LEDS HIER <-')
+            LED_Alarm.blink(0.5,0.5)
         elif status == 'inputcode':
-            print('-> WIJZIG LEDS HIER <-')
+            LED_Waarschuwing.blink(0.2, 0.2, 2)
         elif status == 'lockdown':
-            print('-> WIJZIG LEDS HIER <-')
+            LED_Alarm.on()
         elif status == 'settings':
-            print('-> WIJZIG LEDS HIER <-')
+            LED_Waarschuwing.blink(1, 1, 1)
 
     global_status = property(get_status, set_status)
 
@@ -65,9 +74,9 @@ class InbraakAlarm():
     # Wijzig de deurstatus
     def set_deurstatus(self, deurstatus):
         if deurstatus:
-            print('De deur wordt \033[31mdichtgedaan\033[30m.')
+            print('De deur wordt dichtgedaan.')
         else:
-            print('De deur wordt \033[32mopengedaan\033[30m.')
+            print('De deur wordt opengedaan.')
         self._deurdicht = deurstatus
         if self._status == 'armed' and self._deurdicht == False:
             app.global_status = 'lockdown'
@@ -75,7 +84,7 @@ class InbraakAlarm():
 
     # Check of de status is veranderd
     def start_anti_inbraak(self):
-        print('GET OUT, INITIATE \033[91mLOCKDOWN!\033[30m CALL 911!')
+        print('GET OUT, INITIATE \033[91mLOCKDOWN! CALL 911!')
         client.calls.create(to='+31652144206', from_='+1 415-742-2845', url='http://raw.githubusercontent.com/vincevannoort/miniproject-computersystems/master/applicatie/inbraak-alarm-response.xml')
 
     global_deurstatus = property(get_deurstatus, set_deurstatus)
@@ -157,8 +166,8 @@ if __name__ == '__main__':
                         # Als de code gelijk is aan 4 cijfers, dan check je of de code juist is ingevoerd
                         if len(app._userbeveiligingscode) == 4:
                             if app._beveiligingscode == app._userbeveiligingscode or app._previousstatus == 'settings-new':
-                                print('Code is: \033[32mjuist\033[30m.')
-                                print('-> WIJZIG LEDS HIER <-')
+                                print('Code is: juist.')
+                                LED_Actief.blink(1,0.5, 1)
                                 pygame.time.wait(1000) # wacht even, zodat de indicatie led kan worden getoond.
                                 if app._previousstatus == 'unarmed':
                                     if app._deurdicht == True:
@@ -175,14 +184,14 @@ if __name__ == '__main__':
                                     app.global_status = 'settings-new' # set previous state
                                     app.global_status = 'inputcode'
                                 elif app._previousstatus == 'settings-new':
-                                    print('Gelukt, je oude code \033[32m{}\033[30m wordt veranderd in \033[32m{}\033[30m.'.format(app._beveiligingscode, app._userbeveiligingscode))
+                                    print('Gelukt, je oude code {} wordt veranderd in {}.'.format(app._beveiligingscode, app._userbeveiligingscode))
                                     app._beveiligingscode = app._userbeveiligingscode
                                     app.global_status = 'unarmed'
                                 # reset altijd de userbeveiligingscode
                                 app._userbeveiligingscode = ''
                             else:
-                                print('Code is: \033[31monjuist\033[30m.')
-                                print('-> WIJZIG LEDS HIER <-')
+                                print('Code is: onjuist.')
+                                LED_Alarm.blink(1,0.5, 1)
                                 pygame.time.wait(1000) # wacht even, zodat de indicatie led kan worden getoond.
                                 if app._previousstatus == 'settings-check':
                                     app.global_status = 'settings'
