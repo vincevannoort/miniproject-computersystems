@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import pygame
 from gpiozero import LED, Button
+from signal import pause
 from threading import Timer
 
 # Setup twilio voor SMS service
@@ -14,14 +15,14 @@ client = TwilioRestClient(account_sid, auth_token)
 LED_Alarm = LED(2)
 LED_Waarschuwing = LED(3)
 LED_Actief = LED(4)
-Button_Deur = Button(17)
+button_Deur = Button(17)
 
 # Initaliseer applicatie via PyGame
 pygame.init()
 screen = pygame.display.set_mode((1,1))
 
 # Firebase database connectie
-conn = sqlite3.connect('logs.db')
+conn = sqlite3.connect('logs.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('CREATE TABLE IF NOT EXISTS logs(id INTEGER PRIMARY KEY AUTOINCREMENT, status TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
 
@@ -82,9 +83,12 @@ class InbraakAlarm():
             app.global_status = 'lockdown'
             self._timer.start()
 
+    def verander_deurstatus_door_deur(self):
+        self.global_deurstatus = (not self.global_deurstatus)
+
     # Check of de status is veranderd
     def start_anti_inbraak(self):
-        print('GET OUT, INITIATE \033[91mLOCKDOWN! CALL 911!')
+        print('GET OUT, INITIATE LOCKDOWN! CALL 911!')
         client.calls.create(to='+31652144206', from_='+1 415-742-2845', url='http://raw.githubusercontent.com/vincevannoort/miniproject-computersystems/master/applicatie/inbraak-alarm-response.xml')
 
     global_deurstatus = property(get_deurstatus, set_deurstatus)
@@ -93,6 +97,7 @@ class InbraakAlarm():
 if __name__ == '__main__':
     app = InbraakAlarm()
     app.global_status = 'unarmed'
+    button_Deur.when_pressed = app.verander_deurstatus_door_deur
 
     # Laat de applicatie runnen
     while True:
@@ -104,10 +109,6 @@ if __name__ == '__main__':
                 conn.close()
 
             if event.type == pygame.KEYDOWN:
-
-                # Verander de status van de deur door D in te drukken
-                if event.key == pygame.K_KP_PLUS:
-                    app.global_deurstatus = (not app.global_deurstatus)
 
                 # Werkt alleen wanneer je de settingsknop indrukt als de status unarmed is
                 if event.key == pygame.K_KP_PERIOD and app.global_status == 'unarmed':
