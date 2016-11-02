@@ -76,7 +76,7 @@ class InbraakAlarm():
     # Check of de status is veranderd
     def start_anti_inbraak(self):
         print('GET OUT, INITIATE \033[91mLOCKDOWN!\033[30m CALL 911!')
-        client.calls.create(to='+31652144206', from_='+1 415-742-2845', url='https://raw.githubusercontent.com/vincevannoort/miniproject-computersystems/master/applicatie/inbraak-alarm-response.xml')
+        client.calls.create(to='+31652144206', from_='+1 415-742-2845', url='http://raw.githubusercontent.com/vincevannoort/miniproject-computersystems/master/applicatie/inbraak-alarm-response.xml')
 
     global_deurstatus = property(get_deurstatus, set_deurstatus)
 
